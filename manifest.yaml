@@ -1,0 +1,19 @@
+name: maplibreglnativeprivate
+description: A private fork of the MapLibre library
+repository: git@github.com:lyft/maplibre-gl-native-private.git
+team_email: mapxp-team@lyft.com
+slack: '#mapxp-maplibre-build'
+image_type: library
+builder:
+  name: docker_build
+  params:
+    dockerfile: lyft-scripts/Dockerfile.cirunner
+orchestration:
+  roots:
+    - name: bootstrap
+      directory: ops/terraform/bootstrap
+tests:
+  - name: build_android
+    type: jailed
+    network: true
+    command: ./build-android.sh

@@ -1,0 +1,152 @@
+#
+# Base Image
+#
+
+FROM lyft/bionicbase:336a47d0914785608ac7b1f8a25a711bdcd5be33
+
+#
+# Install Needed OS Packages
+#
+
+# apt-utils: resolves debconf warning https://github.com/phusion/baseimage-docker/issues/319
+# ca-certificates: certificates for curl/etc
+# curl: to use tools/downloader
+# less: view file contents when debugging Docker builds
+# libdigest-sha-perl: shasum for tools/shasum
+# locales: to build UTF-8 locale
+# maven: needed for Android builds and downloading from maven repositories
+# openjdk-11-jdk: for Android builds and gradle
+# unzip: to unzip downloaded zipfiles
+# vim: to edit file contents when debugging Docker builds
+RUN : \
+    && apt-get --allow-releaseinfo-change update \
+    && apt-get upgrade -y \
+    && apt-get install -y apt-utils 2>&1 | grep -v "debconf: delaying package configuration, since apt-utils is not installed" \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        less \
+        libdigest-sha-perl \
+        locales \
+        maven \
+        openjdk-11-jdk \
+        unzip \
+        vim \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && :
+
+#
+# Setup Java
+#
+
+# Keystore format has changed since JAVA 8 https://bugs.launchpad.net/ubuntu/+source/openjdk-9/+bug/1743139
+RUN : \
+    && mv /etc/ssl/certs/java/cacerts /etc/ssl/certs/java/cacerts.old \
+    && keytool -importkeystore -destkeystore /etc/ssl/certs/java/cacerts -deststoretype jks -deststorepass changeit -srckeystore /etc/ssl/certs/java/cacerts.old -srcstoretype pkcs12 -srcstorepass changeit \
+    && rm /etc/ssl/certs/java/cacerts.old \
+    & :
+
+# Select JAVA 11 as default
+RUN : \
+    && update-alternatives --set javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac \
+    && :
+RUN : \
+    && update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java \
+    && :
+ENV JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+
+#
+# Setup Locales
+#
+
+RUN : \
+    && echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+    && echo "LANG=en_US.UTF-8" > /etc/locale.conf \
+    && locale-gen en_US.UTF-8 \
+    && :
+
+ENV LANG="en_US.UTF-8"
+ENV LC_ALL="en_US.UTF-8"
+
+#
+# Download and Install Android SDK Command Line Tools
+#
+
+ENV ANDROID_SDK_ROOT="/opt/android-sdk-linux"
+ENV ANDROID_HOME="/opt/android-sdk-linux"
+ENV ANDROID_SDK_DOWNLOAD_OUTPUT_FILE="sdk.zip"
+# From https://developer.android.com/studio#command-tools "SDK tools package" column for Platform "Linux"
+ENV ANDROID_SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip"
+# From https://developer.android.com/studio#command-tools "SHA-256 checksum" column for Platform "Linux"
+ENV ANDROID_SDK_CHECKSUM="d71f75333d79c9c6ef5c39d3456c6c58c613de30e6a751ea0dbd433e8f8b9cbf  $ANDROID_SDK_DOWNLOAD_OUTPUT_FILE"
+
+RUN : \
+    && cd /opt \
+    && curl -o "$ANDROID_SDK_DOWNLOAD_OUTPUT_FILE" "$ANDROID_SDK_URL" \
+    && echo "$ANDROID_SDK_CHECKSUM" | shasum -a 256 -c - \
+    && mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools \
+    && unzip -q "$ANDROID_SDK_DOWNLOAD_OUTPUT_FILE" -d /tmp/ \
+    && mv /tmp/cmdline-tools/ "${ANDROID_SDK_ROOT}/cmdline-tools/latest" \
+    && rm "$ANDROID_SDK_DOWNLOAD_OUTPUT_FILE" \
+    && :
+
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin"
+
+#
+# Use Android SDKManager to Install Needed SDKs
+#
+
+# Accept all licenses
+RUN : \
+    && yes | sdkmanager --licenses | grep -A 1 -B 1 -E 'Accept\?\s+\(y/N\):.*$|\d+/\d+|1/6' | grep -v -- -- \
+    && :
+
+RUN : \
+    && touch /root/.android/repositories.cfg \
+    && :
+
+# Install platform-tools
+RUN : \
+    && yes | sdkmanager \
+        "platform-tools" \
+    && :
+
+# Update stable channel sdkmanager lists of packages
+RUN : \
+    && yes | sdkmanager --update --channel=0 \
+    && :
+
+#
+# Install build tools and ndk
+#
+
+ENV ANDROID_BUILD_TOOLS_VERSION="32.0.0"
+ENV ANDROID_NDK_VERSION="20.0.5594570"
+
+RUN : \
+    && yes | sdkmanager \
+        "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
+        "ndk;${ANDROID_NDK_VERSION}" \
+        "platforms;android-32" \
+    && :
+
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}:${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}"
+
+#
+# Validate Maven Install from Earlier apt-get
+#
+
+RUN : \
+    && mvn --version \
+    && :
+
+#
+# Copy in source code to be operated upon
+#
+
+ENV COPY_TO_DIR="/code/maplibre-gl-native-private"
+COPY . "$COPY_TO_DIR"
+
+WORKDIR $COPY_TO_DIR
