@@ -5,14 +5,6 @@ module "aws_provider_roles" {
 
 provider "aws" {
   region = "us-east-1"
-  alias  = "primary"
-  assume_role {
-    role_arn = module.aws_provider_roles.zimride
-  }
-}
-provider "aws" {
-  region = "us-west-2"
-  alias  = "backup"
   assume_role {
     role_arn = module.aws_provider_roles.zimride
   }

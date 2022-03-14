@@ -12,8 +12,23 @@ orchestration:
   roots:
     - name: bootstrap
       directory: ops/terraform/bootstrap
-tests:
-  - name: build_android
-    type: jailed
-    network: true
-    command: ./build-android.sh
+    - name: staging
+      directory: ops/terraform/staging
+containers:
+  - name: buildandroid
+    command: ./lyft-scripts/build-android.sh
+    limits:
+      cpu: 4
+      memory: 8Gi
+facets:
+  - name: buildandroid
+    member: maplibreglnative.buildandroid
+    type: job
+deploy:
+  -   - name: build-android
+        automatic: true
+        environment: staging
+        kubernetes:
+          enabled: true
+        targets:
+          - facet: buildandroid

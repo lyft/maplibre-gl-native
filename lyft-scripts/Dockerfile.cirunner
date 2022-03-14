@@ -11,13 +11,12 @@ FROM lyft/bionicbase:336a47d0914785608ac7b1f8a25a711bdcd5be33
 # apt-utils: resolves debconf warning https://github.com/phusion/baseimage-docker/issues/319
 # ca-certificates: certificates for curl/etc
 # curl: to use tools/downloader
-# less: view file contents when debugging Docker builds
 # libdigest-sha-perl: shasum for tools/shasum
 # locales: to build UTF-8 locale
 # maven: needed for Android builds and downloading from maven repositories
 # openjdk-11-jdk: for Android builds and gradle
 # unzip: to unzip downloaded zipfiles
-# vim: to edit file contents when debugging Docker builds
+# build-essential: make and related tools
 RUN : \
     && apt-get --allow-releaseinfo-change update \
     && apt-get upgrade -y \
@@ -25,13 +24,12 @@ RUN : \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        less \
         libdigest-sha-perl \
         locales \
         maven \
         openjdk-11-jdk \
         unzip \
-        vim \
+        build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && :
