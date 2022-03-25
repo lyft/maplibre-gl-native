@@ -4,6 +4,7 @@ repository: git@github.com:lyft/maplibre-gl-native-private.git
 team_email: mapxp-team@lyft.com
 slack: '#mapxp-maplibre-build'
 image_type: library
+credentials: true
 builder:
   name: docker_build
   params:
@@ -14,12 +15,14 @@ orchestration:
       directory: ops/terraform/bootstrap
     - name: staging
       directory: ops/terraform/staging
+    - name: production
+      directory: ops/terraform/production
 containers:
   - name: buildandroid
     command: ./lyft-scripts/build-android.sh
     limits:
       cpu: 4
-      memory: 8Gi
+      memory: 16Gi
 facets:
   - name: buildandroid
     member: maplibreglnative.buildandroid
@@ -27,7 +30,7 @@ facets:
 deploy:
   -   - name: build-android
         automatic: true
-        environment: staging
+        environment: production
         kubernetes:
           enabled: true
         targets:

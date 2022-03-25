@@ -17,6 +17,7 @@ FROM lyft/bionicbase:126a7a77da17c9da6c2182a6b7db5bc41503e382
 # openjdk-11-jdk: for Android builds and gradle
 # unzip: to unzip downloaded zipfiles
 # build-essential: make and related tools
+# git: needed for MapLibre build to get revision
 RUN : \
     && apt-get --allow-releaseinfo-change update \
     && apt-get upgrade -y \
@@ -30,6 +31,7 @@ RUN : \
         openjdk-11-jdk \
         unzip \
         build-essential \
+        git-all \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && :
@@ -120,17 +122,18 @@ RUN : \
 # Install build tools and ndk
 #
 
-ENV ANDROID_BUILD_TOOLS_VERSION="32.0.0"
+ENV ANDROID_BUILD_TOOLS_VERSION="28.0.3"
 ENV ANDROID_NDK_VERSION="20.0.5594570"
 
 RUN : \
     && yes | sdkmanager \
         "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
         "ndk;${ANDROID_NDK_VERSION}" \
-        "platforms;android-32" \
+        "platforms;android-28" \
     && :
 
-ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}:${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}"
+ENV NDK_HOME="${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}"
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}:${NDK_HOME}"
 
 #
 # Validate Maven Install from Earlier apt-get
