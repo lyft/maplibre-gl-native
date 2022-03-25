@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Set the version here! This should be updated on every patch and every MapLibre version change.
-readonly VERSION_NAME="9.5.2-patch-0"
+readonly VERSION_NAME="9.5.2-patch-1"
 
 # Set the artifact ID, artifact name, & artifactory URL here. This shouldn't change.
 readonly ARTIFACT_ID="android-sdk"
@@ -28,11 +28,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 BUILDTYPE=Release make apackage
 
 # Create dist directory for uploading to artifactory
-echo "Making dist directory"
-mkdir dist
-
-# Create directory for objdump outputs
-mkdir objdump_files
+mkdir -p "dist/symbols/"
 
 # For debugging: investigate which objdump binaries are available
 # find $NDK_HOME -iname "*objdump"
@@ -42,28 +38,28 @@ $NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-lin
     --dwarf=info --dwarf=rawline \
     MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/armeabi-v7a/libmapbox-gl.so \
     | gzip -k \
-    > objdump_files/armeabi-v7a.objdump.gz
+    > dist/symbols/armeabi-v7a.objdump.gz
 
 $NDK_HOME/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump \
     --dwarf=info --dwarf=rawline \
     MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/arm64-v8a/libmapbox-gl.so \
     | gzip -k \
-    > objdump_files/arm64-v8a.objdump.gz
+    > dist/symbols/arm64-v8a.objdump.gz
 
 $NDK_HOME/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-objdump \
     --dwarf=info --dwarf=rawline \
     MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/x86/libmapbox-gl.so \
     | gzip -k \
-    > objdump_files/x86.objdump.gz
+    > dist/symbols/x86.objdump.gz
 
 $NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-objdump \
     --dwarf=info --dwarf=rawline \
     MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/x86_64/libmapbox-gl.so \
     | gzip -k \
-    > objdump_files/x86_64.objdump.gz
+    > dist/symbols/x86_64.objdump.gz
 
 # Create tar file in dist directory from symbol mapping files
-tar -cvf "dist/${ARTIFACT_NAME}.tar" objdump_files
+tar -cvf "dist/${ARTIFACT_NAME}.tar" "dist/symbols/"
 
 # Update VERSION_NAME property in gradle.properties. Some of this is copied from .github/workflows/android-release.yml
 sed -i -e "s/^VERSION_NAME=.*/VERSION_NAME=${VERSION_NAME}/" MapboxGLAndroidSDK/gradle.properties
