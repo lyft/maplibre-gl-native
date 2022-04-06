@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Set the version here! This should be updated on every patch and every MapLibre version change.
-readonly VERSION_NAME="9.5.2-patch-2"
+readonly VERSION_NAME="9.5.2-patch-3"
 
 # Set the artifact ID, artifact name, & artifactory URL here. This shouldn't change.
 readonly ARTIFACT_ID="android-sdk"
@@ -60,7 +60,6 @@ $NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-o
 
 # Create tar file in dist directory from symbol mapping files
 tar -cvf "dist/${ARTIFACT_NAME}.tar" "dist/symbols/"
-shasum -a 256 "dist/${ARTIFACT_NAME}.tar" | cut -d ' ' -f 1 > "dist/${ARTIFACT_NAME}.tar.sha256"
 
 # Update VERSION_NAME property in gradle.properties. Some of this is copied from .github/workflows/android-release.yml
 sed -i -e "s/^VERSION_NAME=.*/VERSION_NAME=${VERSION_NAME}/" MapboxGLAndroidSDK/gradle.properties
@@ -74,20 +73,28 @@ cat MapboxGLAndroidSDK/build/publications/release/pom-default.xml
 
 # Copy pom file to dist directory and rename to pom.xml
 mv MapboxGLAndroidSDK/build/publications/release/pom-default.xml "dist/${ARTIFACT_NAME}.pom"
-shasum -a 256 "dist/${ARTIFACT_NAME}.pom" | cut -d ' ' -f 1 > "dist/${ARTIFACT_NAME}.pom.sha256"
 
 # Move library to dist directory
 mv MapboxGLAndroidSDK/build/outputs/aar/MapboxGLAndroidSDK-release.aar "dist/${ARTIFACT_NAME}.aar"
-shasum -a 256 "dist/${ARTIFACT_NAME}.aar" | cut -d ' ' -f 1 > "dist/${ARTIFACT_NAME}.aar.sha256"
 
 # Print contents of dist directory
 echo "Printing contents of dist directory:"
 ls -a dist
 
-# Upload artifacts to artifactory
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.aar" -T "dist/${ARTIFACT_NAME}.aar"
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.aar.sha256" -T "dist/${ARTIFACT_NAME}.aar.sha256"
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.pom" -T "dist/${ARTIFACT_NAME}.pom"
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.pom.sha256" -T "dist/${ARTIFACT_NAME}.pom.sha256"
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.tar" -T "dist/${ARTIFACT_NAME}.tar"
-curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -X PUT "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.tar.sha256" -T "dist/${ARTIFACT_NAME}.tar.sha256"
+# Uploads an artifact to artifactory using curl
+# $1 - Path to the file to upload
+# $2 - Destination within artifactory to upload to
+function upload_to_artifactory() {
+  local -r artifact="$1"
+  local -r dst="$2"
+  local -r checksum_sha256=$(shasum -a 256 "$artifact" | cut -d ' ' -f 1)
+
+  curl -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" \
+    -X PUT "$dst" \
+    --header "X-Checksum-Sha256:$checksum_sha256" \
+    -T "$artifact"
+}
+
+upload_to_artifactory "dist/${ARTIFACT_NAME}.pom" "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.pom"
+upload_to_artifactory "dist/${ARTIFACT_NAME}.aar" "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.aar"
+upload_to_artifactory "dist/${ARTIFACT_NAME}.tar" "${ARTIFACTORY_URL}/${ARTIFACT_NAME}.tar"
