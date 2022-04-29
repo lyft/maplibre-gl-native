@@ -1,7 +1,7 @@
 name: maplibreglnativeprivate
 description: A private fork of the MapLibre library
 repository: git@github.com:lyft/maplibre-gl-native-private.git
-team_email: mapxp-team@lyft.com
+team_email: mapxp-eng@lyft.com
 slack: '#mapxp-maplibre-build'
 image_type: library
 credentials: true
