@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Set the version here! This should be updated on every patch and every MapLibre version change.
-readonly VERSION_NAME="9.5.2-patch-3"
+readonly VERSION_NAME="9.5.2-patch-4"
 
 # Set the artifact ID, artifact name, & artifactory URL here. This shouldn't change.
 readonly ARTIFACT_ID="android-sdk"
