@@ -46,18 +46,6 @@ $NDK_HOME/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64
     | gzip -k \
     > dist/symbols/arm64-v8a.objdump.gz
 
-$NDK_HOME/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-objdump \
-    --dwarf=info --dwarf=rawline \
-    MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/x86/libmapbox-gl.so \
-    | gzip -k \
-    > dist/symbols/x86.objdump.gz
-
-$NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-objdump \
-    --dwarf=info --dwarf=rawline \
-    MapboxGLAndroidSDK/build/intermediates/cmake/release/obj/x86_64/libmapbox-gl.so \
-    | gzip -k \
-    > dist/symbols/x86_64.objdump.gz
-
 # Create tar file in dist directory from symbol mapping files
 tar -cvf "dist/${ARTIFACT_NAME}.tar" "dist/symbols/"
 
