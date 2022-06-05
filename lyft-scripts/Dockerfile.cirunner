@@ -2,7 +2,7 @@
 # Base Image
 #
 
-FROM lyft/bionicbase:c205efbc13343371cba27ba83564ba027db24f8c
+FROM lyft/bionicbase:055f65556197bd43a4181eab936316c92dafe349
 
 #
 # Install Needed OS Packages
