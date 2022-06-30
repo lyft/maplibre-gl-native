@@ -140,7 +140,7 @@ public:
 
         activeRequests.insert(req);
 
-        if (online) {
+        if (online && req != NULL) {
             req->request = httpFileSource.request(req->resource, callback);
         } else {
             Response response;
