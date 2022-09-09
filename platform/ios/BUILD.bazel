@@ -127,6 +127,7 @@ ios_framework(
     infoplists = ["build/Info.plist"],
     linkopts = ["-all_load"],
     minimum_os_version = "9.0",
+    visibility = ["//visibility:public"],
     deps = ["sdk"],
 )
 
