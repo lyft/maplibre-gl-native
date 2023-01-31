@@ -21,7 +21,7 @@ jobs:
           password: ${{ secrets.CR_PAT }}
 
       - name: Build and push android-ndk-r21b image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: ./platform/android/docker/android-ndk-r21b        
           context: ./platform/android/docker
